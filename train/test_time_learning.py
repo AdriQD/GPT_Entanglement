@@ -1,6 +1,6 @@
 
 import os
-from  numpy import save, array
+from  numpy import save, array, load, hstack
 import re
 from pathlib import Path
 import json
@@ -125,7 +125,7 @@ def prompt_local_model(gates, feedback ,set_of_gates, angles):
     return chat_with_oss_python_block(system, user_prompt)
 
 
-def the_experiment_main( file_iteration: int,max_iterations:int, file_run,experiment_folder):
+def the_experiment_main( file_iteration:int, max_iterations:int, file_run,experiment_folder):
 
 
     #=====================================================================
@@ -225,9 +225,8 @@ def the_experiment_main( file_iteration: int,max_iterations:int, file_run,experi
     #=====================================================================
     # SAVING STATISTICS
     #====================================================================
-    save(experiment_folder/'Q_values_{file_iteration}.npy', array(Q_list))
-    save(experiment_folder / f'Q_relativeGains_{file_iteration}.npy', array(Q_relativeGains))
-
+    return Q_list, Q_relativeGains
+    
 
 #=====================================================================
 # Main execution
@@ -243,6 +242,7 @@ if __name__ == "__main__":
     #=====================================================================
     # Starting iterative improvement (local OSS model)
     #====================================================================
+
 
     logging.info("\n Starting iterative improvement (GPT model)...")
     for i in range(1, file_iteration + 1):
@@ -268,5 +268,28 @@ if __name__ == "__main__":
                 json.dump(initial_circuit, f)
 
         logging.info(f"\n Starting experiment iteration {i}...")
-        the_experiment_main(file_iteration, max_iterations, file_run, experiment_folder)
+        Qlist, QRelativeGain = the_experiment_main(i , max_iterations, file_run, experiment_folder)
         logging.info(f"Experiment {i} completed.")
+
+        stats_folder = Path(f"./stats/ stats_from_iteration_{i}")
+        stats_folder.mkdir(parents=True, exist_ok=True) 
+
+        #=====================================================================
+        # First we create the null files for easier data handling, then we save the actual data
+        # stats from each experiment inside them
+        #====================================================================
+
+
+        if experiment_id == 1:  
+            save(stats_folder / f'Q_values.npy', array([0]*max_iterations))
+            save(stats_folder / f'Q_relativeGains.npy', array([0]*max_iterations))
+
+        oldQlist = load(stats_folder / f'Q_values.npy')
+        oldQRelativeGains = load(stats_folder / f'Q_relativeGains.npy')
+
+        newQlist = hstack((oldQlist, array(Qlist)))
+        newQRelativeGains = hstack((oldQRelativeGains, array(QRelativeGain)))
+
+        save(stats_folder/ f'Q_values_{experiment_id}.npy', newQlist)
+        save(stats_folder / f'Q_relativeGains_{experiment_id}.npy', newQRelativeGains)
+
