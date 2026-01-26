@@ -1,5 +1,7 @@
 #README
 
+#SMARTER VERSION UNDERWAY
+
 ##PROJECT GENERAL GOAL
 
 This is the GPT_Entanglement git. In this project, we study the extent to which it is possible to synthesize entangling quantum circuits starting from a random one, and use it in an uphill-climbing process, where the circuit is represented now as a list of gates, passed to the LLM, and the output used to feed the circuit again in the next query. In this way, we implement a simple -one step - memory scheme during the resampling, in ML terms. Plus, we also add feedback that provides a criticism or a reward in the form of "you did better/worst of this amount X".
