@@ -50,8 +50,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 max_iterations = config.getint('training', 'max_iterations', fallback=15)
 num_gates = config.getint('quantum', 'num_gates', fallback=25)
 
-experiment_tag = f"{experiment}_id{experiment_id}" if experiment_id else experiment
-experiment_folder = Path(f"{experiment_tag}_{timestamp}")
+#experiment_tag = f"{experiment}_id{experiment_id}" if experiment_id else experiment
+experiment_folder = Path(f"exp_{experiment}_{experiment_id}")
 Path(experiment_folder).mkdir(parents=True, exist_ok=True)
 
 
@@ -125,7 +125,7 @@ def prompt_local_model(gates, feedback ,set_of_gates, angles):
     return chat_with_oss_python_block(system, user_prompt)
 
 
-def the_experiment_main(file_iteration, file_run):
+def the_experiment_main( file_iteration: int,max_iterations:int, file_run,experiment_folder):
 
 
     #=====================================================================
@@ -153,6 +153,8 @@ def the_experiment_main(file_iteration, file_run):
     # Starting iterative improvement ...
     #=====================================================================        
     Q_list =[]
+    Q_relativeGains =[]
+
     for i in range(max_iterations):
         print(f"\nIteration {i+1}/{max_iterations}")
     
@@ -192,7 +194,8 @@ def the_experiment_main(file_iteration, file_run):
                     iteration_data = {"proposed_gates": proposed}
 
                     Q_list.append(Qval)
-                    with open(file_run / f'query_{i}.json', 'w') as f:
+                    Q_relativeGains.append(Qval-best_Q)
+                    with open(file_run / f'circuitQuery_{i}.json', 'w') as f:
                         json.dump(iteration_data, f)
 
                     #==============================================================================
@@ -218,7 +221,13 @@ def the_experiment_main(file_iteration, file_run):
 
     logging.info(f"Finished loop {file_iteration}.")
     print("Best Q:", best_Q)
-    save(file_run / 'Q_values.npy', array(Q_list))
+
+    #=====================================================================
+    # SAVING STATISTICS
+    #====================================================================
+    save(experiment_folder/'Q_values_{file_iteration}.npy', array(Q_list))
+    save(experiment_folder / f'Q_relativeGains_{file_iteration}.npy', array(Q_relativeGains))
+
 
 #=====================================================================
 # Main execution
@@ -231,36 +240,33 @@ if __name__ == "__main__":
     logging.info(f"Starting experiment iteration {file_iteration}...")
     
 
-#=====================================================================
-#create memory-folder for this experiment run, inside the experiment folder
-#=====================================================================
-
-    file_run = Path(experiment_folder / f"run_{file_iteration}")
-    file_run.mkdir(parents=True, exist_ok=True)
-
-    #=====================================================================
-    # Generating initial random low-entanglement circuit with MW between 0.2 and 0.4
-    #====================================================================
-
-    if file_iteration == 1:
-
-        logging.info("Generating initial circuit at file run 1...")
-        best_gates, best_Q = generate_initial_circuit(seed_=seed_value)
-        initial_circuit = {"gates": best_gates, "Q": best_Q}
-        logging.info("\n Saving initial circuit")
-
-        #===============================================
-        # SAVING INITIAL CIRCUIT AT FILE RUN 0
-        #===============================================
-        with open(file_run / 'initial_circ.json', 'w') as f:
-            json.dump(initial_circuit, f)
-
     #=====================================================================
     # Starting iterative improvement (local OSS model)
     #====================================================================
 
     logging.info("\n Starting iterative improvement (GPT model)...")
     for i in range(1, file_iteration + 1):
+
+        file_run = Path(experiment_folder / f"iteration_{i}")
+        file_run.mkdir(parents=True, exist_ok=True)
+
+        if i == 1:
+
+            #=====================================================================
+            # Generating initial random low-entanglement circuit with MW between 0.2 and 0.4
+            #====================================================================
+
+            logging.info("Generating initial circuit at file run 1...")
+            best_gates, best_Q = generate_initial_circuit(seed_=seed_value)
+            initial_circuit = {"gates": best_gates, "Q": best_Q}
+            logging.info("\n Saving initial circuit")
+
+            #===============================================
+            # SAVING INITIAL CIRCUIT AT FILE RUN 0
+            #===============================================
+            with open(file_run / 'initial_circ.json', 'w') as f:
+                json.dump(initial_circuit, f)
+
         logging.info(f"\n Starting experiment iteration {i}...")
-        the_experiment_main(file_iteration, file_run)
+        the_experiment_main(file_iteration, max_iterations, file_run, experiment_folder)
         logging.info(f"Experiment {i} completed.")
