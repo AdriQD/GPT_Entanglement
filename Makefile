@@ -9,21 +9,11 @@ run-3: install
 		ITERATION=$$i python train/test_time_learning.py; \
 	done
 
-run-10x3: install
-	@for exp in 1 2 3 4 5 6 7 8 9 10; do \
-		echo "Experiment $$exp/10"; \
-		for i in 1 2 3; do \
-			echo "  Iteration $$i/3"; \
-			EXPERIMENT_ID=$$exp ITERATION=$$i python train/test_time_learning.py; \
-		done; \
-	done
 
 run-nx3: install
 	@EXP_COUNT=$${EXPERIMENTS:-10}; \
 	for exp in $$(seq 1 $$EXP_COUNT); do \
 		echo "Experiment $$exp/$$EXP_COUNT"; \
-		for i in 1 2 3; do \
-			echo "  Iteration $$i/3"; \
-			EXPERIMENT_ID=$$exp ITERATION=$$i python train/test_time_learning.py; \
+			EXPERIMENT_ID=$$exp python train/test_time_learning.py; \
 		done; \
 	done

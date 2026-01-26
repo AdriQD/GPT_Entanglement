@@ -226,7 +226,8 @@ def the_experiment_main(file_iteration, file_run):
 
 if __name__ == "__main__":
 
-    file_iteration = int(os.getenv("ITERATION", "0"))
+    #file_iteration = int(os.getenv("ITERATION", "0"))
+    file_iteration = 3  # For testing purposes, set iteration here
     logging.info(f"Starting experiment iteration {file_iteration}...")
     
 
@@ -259,6 +260,7 @@ if __name__ == "__main__":
     #====================================================================
 
     logging.info("\n Starting iterative improvement (GPT model)...")
-
-    the_experiment_main(file_iteration, file_run)
-    logging.info("Experiment completed.")
+    for i in range(1, file_iteration + 1):
+        logging.info(f"\n Starting experiment iteration {i}...")
+        the_experiment_main(file_iteration, file_run)
+        logging.info(f"Experiment {i} completed.")
