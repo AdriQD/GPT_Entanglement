@@ -1,0 +1,26 @@
+experiment: name: ttl_memory
+  description: "Test the TTL memory mechanism with a simple task."
+
+run:
+  n_qubits: 2
+  n_steps: 10
+  single_qubit_gate_set = H,RY
+  two_qubit_gate_set = CNOT
+
+  #hint: do not use more than three or four angles for better performance
+  angles = 0.1,0.45,1.75 
+  seed_value = 876
+
+llm:
+  model: gpt-3.5-turbo
+  max_tokens: 900
+  key: ${OPENAI_KEY}
+  retry: 
+    n_retries: 5
+    backoff_factor: 2
+
+  metrics:
+    quantum: Meyer-Wallach
+    auxiliary: number_of_tokens
+
+
